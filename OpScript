@@ -1,0 +1,26 @@
+local HttpService = game:GetService("HttpService")
+local config = HttpService:JSONDecode("{\"schemaVersion\":1,\"projectId\":\"blade-ball-main\",\"runtimeVersion\":\"1.1.0\",\"uiLibraryId\":\"arcane\",\"appearance\":{\"themeId\":\"Dark\",\"density\":\"normal\",\"playstyle\":\"custom\",\"windowTitle\":\"GETO SCRIPT | Blade ball\",\"usageNotify\":false,\"usageNotifyText\":\"Version loaded. Toggle UI: RightControl.\"},\"layout\":[{\"id\":\"combat\",\"enabled\":true,\"sections\":[{\"id\":\"combat-gameplay\",\"enabled\":true,\"controls\":[{\"id\":\"auto-parry\",\"enabled\":true},{\"id\":\"spam-parry\",\"enabled\":true},{\"id\":\"auto-dash\",\"enabled\":true},{\"id\":\"auto-ability\",\"enabled\":true},{\"id\":\"ball-esp\",\"enabled\":true},{\"id\":\"target-esp\",\"enabled\":true},{\"id\":\"parry-now\",\"enabled\":true}]},{\"id\":\"combat-timing\",\"enabled\":true,\"controls\":[{\"id\":\"combat-status\",\"enabled\":true},{\"id\":\"parry-direction\",\"enabled\":true},{\"id\":\"parry-window\",\"enabled\":true},{\"id\":\"dash-window\",\"enabled\":true},{\"id\":\"parry-cooldown\",\"enabled\":true},{\"id\":\"combat-help\",\"enabled\":true}]}]},{\"id\":\"swords\",\"enabled\":false,\"sections\":[{\"id\":\"swords-catalog\",\"enabled\":false,\"controls\":[{\"id\":\"swords-grid\",\"enabled\":false}]},{\"id\":\"swords-tools\",\"enabled\":false,\"controls\":[{\"id\":\"swords-actions\",\"enabled\":false}]}]},{\"id\":\"emotes\",\"enabled\":false,\"sections\":[{\"id\":\"emotes-catalog\",\"enabled\":false,\"controls\":[{\"id\":\"emotes-grid\",\"enabled\":false}]},{\"id\":\"emotes-tools\",\"enabled\":false,\"controls\":[{\"id\":\"emotes-actions\",\"enabled\":false}]}]},{\"id\":\"explosions\",\"enabled\":false,\"sections\":[{\"id\":\"explosions-catalog\",\"enabled\":false,\"controls\":[{\"id\":\"explosions-grid\",\"enabled\":false}]},{\"id\":\"explosions-tools\",\"enabled\":false,\"controls\":[{\"id\":\"explosions-actions\",\"enabled\":false}]}]},{\"id\":\"abilities\",\"enabled\":false,\"sections\":[{\"id\":\"abilities-catalog\",\"enabled\":false,\"controls\":[{\"id\":\"abilities-grid\",\"enabled\":false}]},{\"id\":\"abilities-tools\",\"enabled\":false,\"controls\":[{\"id\":\"abilities-actions\",\"enabled\":false}]}]},{\"id\":\"stash\",\"enabled\":false,\"sections\":[{\"id\":\"trade-stash\",\"enabled\":false,\"controls\":[{\"id\":\"stash-about\",\"enabled\":false},{\"id\":\"remove-local-items\",\"enabled\":false}]},{\"id\":\"spawn-options\",\"enabled\":false,\"controls\":[{\"id\":\"spawn-copies\",\"enabled\":false},{\"id\":\"visual-sword\",\"enabled\":false},{\"id\":\"write-equipped\",\"enabled\":false},{\"id\":\"spawn-finisher\",\"enabled\":false},{\"id\":\"spawn-accessory\",\"enabled\":false},{\"id\":\"catalog-sort\",\"enabled\":false}]}]},{\"id\":\"inventory\",\"enabled\":false,\"sections\":[{\"id\":\"inventory-analysis\",\"enabled\":false,\"controls\":[{\"id\":\"inventory-result\",\"enabled\":false},{\"id\":\"inventory-analyze\",\"enabled\":false},{\"id\":\"copy-discord\",\"enabled\":false},{\"id\":\"copy-website\",\"enabled\":false}]},{\"id\":\"catalog-info\",\"enabled\":false,\"controls\":[{\"id\":\"catalog-summary\",\"enabled\":false},{\"id\":\"catalog-refresh\",\"enabled\":false},{\"id\":\"catalog-about\",\"enabled\":false}]}]},{\"id\":\"settings\",\"enabled\":false,\"sections\":[{\"id\":\"theme\",\"enabled\":false,\"controls\":[{\"id\":\"theme-preset\",\"enabled\":false}]},{\"id\":\"about\",\"enabled\":false,\"controls\":[{\"id\":\"about-project\",\"enabled\":false},{\"id\":\"about-credits\",\"enabled\":false},{\"id\":\"about-game-guard\",\"enabled\":false}]}]}]}")
+local runtimeUrl = "https://cdn.project-reverse.org/builder/blade-ball/v1/main.luau"
+local function fetchRuntime()
+    local lastError
+    for attempt = 1, 3 do
+        local ok, result = pcall(function() return game:HttpGet(runtimeUrl, true) end)
+        if ok and type(result) == "string" and #result > 0 then return result end
+        lastError = result
+        if attempt < 3 then task.wait(0.35 * attempt) end
+    end
+    error("Blade Ball runtime download failed: " .. tostring(lastError))
+end
+local source = fetchRuntime()
+local chunk, compileError = loadstring(source)
+assert(chunk, "Blade Ball runtime compile failed: " .. tostring(compileError))
+local run = chunk()
+assert(type(run) == "function", "Blade Ball runtime entrypoint is invalid")
+local genv = (typeof(getgenv) == "function") and getgenv() or _G
+if type(genv.ProjectReverseHub) == "table" and type(genv.ProjectReverseHub.destroy) == "function" then
+    pcall(function() genv.ProjectReverseHub.destroy() end)
+end
+local controller = run(config)
+assert(type(controller) == "table" and type(controller.destroy) == "function", "Blade Ball runtime did not start; inspect the executor console")
+genv.ProjectReverseHub = controller
+return controller
